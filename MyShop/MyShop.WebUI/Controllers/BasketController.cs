@@ -1,4 +1,5 @@
 ﻿using MyShop.Core.Contracts;
+using MyShop.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,9 +12,11 @@ namespace MyShop.WebUI.Controllers
     {
 
         IBasketService basketService;
-        public BasketController(IBasketService BasketService)
+        IOrderService orderService;
+        public BasketController(IBasketService BasketService,IOrderService OrderService)
         {
             this.basketService = BasketService;
+            this.orderService = OrderService;
         }
         // GET: Basket
         public ActionResult Index()
@@ -38,6 +41,32 @@ namespace MyShop.WebUI.Controllers
         {
             var basketSummary = basketService.GetBasketSummary(this.HttpContext);
             return PartialView(basketSummary);
+        }
+
+        public ActionResult Checkout()
+        {
+            return View();
+        }
+        [HttpPost]
+        public ActionResult Checkout(Order order)
+        {
+            var basketItems = basketService.GetBasketItems(this.HttpContext);
+            order.OrderStatus = "Order Created";
+
+            // process the payment
+
+
+            order.OrderStatus = "Payment Processed";
+            orderService.CreatedOrder(order, basketItems);
+            basketService.ClearBasket(this.HttpContext);
+
+            return RedirectToAction("Thankyou", new { OrderId = order.Id });
+        }
+
+        public ActionResult ThankYou(string OrderId)
+        {
+            ViewBag.OrderId = OrderId;
+            return View();
         }
     }
 }
